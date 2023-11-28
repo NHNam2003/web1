@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<title>Test Suite</title>
+<link rel="stylesheet" href="/testscripts/quint/qunit-2.20.0.css" />
+
+<body>
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+  <script src="/testscripts/quint/qunit-2.20.0.js"></script>
+
+  <script src="../event.js"></script>
+  <script>
+    // 1. Module để nhóm các testcase liên quan đến hàm calculateTotal (hàm tính tổng tiền của danh sach sản phẩm)
+    QUnit.module("Calculate Total", function () {
+      QUnit.test('Calculate Total', function (assert) {
+        // Tạo một mảng chứa các sản phẩm để tính tổng tiền
+        let products = [
+          { id: 0, img: './img/anh1.jpg', name: 'Áo khoác nam AKHTK301', classify: 'Áo khoác', detail: { cl: 'DẠ (16% COTON, 78% POLY, 6% SPANDEX)', d: 'Relax', }, price: 800, quantity: 2 },
+          { id: 1, img: './img/anh2.jpg', name: 'Áo khoác nam AKBTK301', classify: 'Áo khoác', detail: { cl: 'Jeans cotton (100% cotton)', d: 'Regular', }, price: 700, quantity: 1 },
+          { id: 2, img: './img/anh3.jpg', name: 'Áo khoác blazer ABZTK301', classify: 'Áo khoác', detail: { cl: 'VẢI TỔNG HỢP (58% Tylen, 40% Rayon, 2% Spandex)', d: 'Regular', }, price: 900, quantity: 3 }
+        ];
+        //Giá trị tổng tiền mong đợi của mảng trên là 5000
+        var expected = 5000;
+        // Gọi hàm calculateTotal và lưu kết quả vào biến actual
+        var actual = calculateTotal(products);
+        // So sánh kết quả với giá trị mong đợi
+        assert.equal(actual, expected, 'The result is correct');
+      });
+    });
+
+    // 2. Module để nhóm các testcase liên quan đến hàm checkPasswordFormat (hàm kiểm tra định dạng của mật khẩu)
+    QUnit.module("Password Format Test", function () {
+      // Trường hợp mật khẩu hợp lệ
+      QUnit.test("Valid Password", function (assert) {
+        // Tạo một mật khẩu hợp lệ
+        var password = "HoangAnh@107";
+        // Gọi hàm checkPasswordFormat với mật khẩu này và lưu kết quả vào biến result
+        var result = checkPasswordFormat(password);
+        // So sánh kết quả với giá trị mong đợi là true
+        assert.equal(result, true, "Password '" + password + "' is valid");
+      });
+      // Trường hợp không có chữ hoa
+      QUnit.test("No Uppercase Letter", function (assert) {
+        var password = "hoanganh@107";
+        var result = checkPasswordFormat(password);
+        assert.equal(result, false, "Password '" + password + "' does not have uppercase letter");
+      });
+      // Trường hợp không có chữ thường
+      QUnit.test("No Lowercase Letter", function (assert) {
+        var password = "HOANGANH@107";
+        var result = checkPasswordFormat(password);
+        assert.equal(result, false, "Password '" + password + "' does not have lowercase letter");
+      });
+      // Trường hợp không có kí tự đặc biệt
+      QUnit.test("No Special Character", function (assert) {
+        var password = "HoangAnh107";
+        var result = checkPasswordFormat(password);
+        assert.equal(result, false, "Password '" + password + "' does not have special character");
+      });
+      // Trường hợp không có số
+      QUnit.test("No Number", function (assert) {
+        var password = "HoangAnh@";
+        var result = checkPasswordFormat(password);
+        assert.equal(result, false, "Password '" + password + "' does not have number");
+      });
+      // Trường hợp mật khẩu ngắn
+      QUnit.test("Too Short", function (assert) {
+        var password = "Anh@1";
+        var result = checkPasswordFormat(password);
+        assert.equal(result, false, "Password '" + password + "' is too short");
+      });
+      // Trường mật khẩu trống
+      QUnit.test("Empty Password", function (assert) {
+        var password = "";
+        var result = checkPasswordFormat(password);
+        assert.equal(result, false, "Password is empty");
+      });
+    });
+
+    // 3. Module để nhóm các testcase liên quan đến hàm searchByName (hàm tìm kiếm sản phẩm theo tên)
+    QUnit.module("Search By Name", function () {
+      // Trường hợp có sản phẩm trùng với tên tìm kiếm
+      QUnit.test("Should return an array of products that match the name", function (assert) {
+        // Gọi hàm searchByName với chuỗi "Áo khoác" và lưu kết quả vào biến actual
+        let actual = searchByName("Áo hoodie nam");
+        // Tạo một mảng chứa các sản phẩm có tên chứa chuỗi "Áo khoác" để so sánh với kết quả
+        let expected = [
+          { classify: "Áo hoodie", detail: { cl: "NỈ DA CÁ (88% COTTON,12% POLY)", d: "RELAX" }, id: 10, img: "./img/anh11.jpg", name: "Áo hoodie nam AHHTK306", price: 549 },
+          { classify: "Áo hoodie", detail: { cl: "95% cotton,5% poly", d: "Regular" }, id: 12, img: "./img/anh13.jpg", name: "Áo hoodie nam AHHTK315", price: 499 },
+          { classify: "Áo hoodie", detail: { cl: "NỈ DA CÁ (88% Cotton,12% Spandex)", d: "RELAX" }, id: 27, img: "./img/anh28.jpg", name: "Áo hoodie nam AHTTK304", price: 529 }
+        ];
+        // So sánh kết quả với giá trị mong đợi
+        assert.deepEqual(actual, expected, "Passed!");
+      });
+      // Trường hợp không có sản phẩm trùng với tên tìm kiếm
+      QUnit.test("Should return an empty array when name does not match any product", function (assert) {
+        let actual = searchByName("Quần")
+        let expected = [];
+        assert.deepEqual(actual, expected, "Not found any product!");
+      });
+    });
+
+    // 4. Module để nhóm các testcase liên quan đến hàm sortByPriceAscending (hàm sắp xếp danh sách sản phẩm theo giá tăng dần)
+    QUnit.module("Sort By Price Ascending", function () {
+      QUnit.test("Should return a new array that is sorted by price ascending", function (assert) {
+        // Tạo một mảng các sản phẩm để làm đầu vào cho hàm
+        let products = [
+          { id: 0, img: './img/anh1.jpg', name: 'Áo khoác nam AKHTK301', classify: 'Áo khoác', detail: { cl: 'DẠ (16% COTON, 78% POLY, 6% SPANDEX)', d: 'Relax', }, price: 869 },
+          { id: 1, img: './img/anh2.jpg', name: 'Áo khoác nam AKBTK301', classify: 'Áo khoác', detail: { cl: 'Jeans cotton (100% cotton)', d: 'Regular', }, price: 699 },
+          { id: 2, img: './img/anh3.jpg', name: 'Áo khoác blazer ABZTK301', classify: 'Áo khoác', detail: { cl: 'VẢI TỔNG HỢP (58% Tylen, 40% Rayon, 2% Spandex)', d: 'Regular', }, price: 1195 }
+        ];
+        // Gọi hàm sortByPriceAscending với mảng products và lưu kết quả vào biến actual
+        let actual = sortByPriceAscending(products);
+        // Tạo một mảng các sản phẩm đã được sắp xếp theo giá tăng dần để so sánh với kết quả
+        let expected = [
+          { id: 1, img: './img/anh2.jpg', name: 'Áo khoác nam AKBTK301', classify: 'Áo khoác', detail: { cl: 'Jeans cotton (100% cotton)', d: 'Regular', }, price: 699 },
+          { id: 0, img: './img/anh1.jpg', name: 'Áo khoác nam AKHTK301', classify: 'Áo khoác', detail: { cl: 'DẠ (16% COTON, 78% POLY, 6% SPANDEX)', d: 'Relax', }, price: 869 },
+          { id: 2, img: './img/anh3.jpg', name: 'Áo khoác blazer ABZTK301', classify: 'Áo khoác', detail: { cl: 'VẢI TỔNG HỢP (58% Tylen, 40% Rayon, 2% Spandex)', d: 'Regular', }, price: 1195 }
+        ];
+        // So sánh kết quả với giá trị mong đợi
+        assert.deepEqual(actual, expected, "Passed!");
+        // Kiểm tra actual và products có phải là cùng một mảng hay không
+        assert.notStrictEqual(actual, products, "Passed!");
+      });
+    });
+
+    // 5. Module để nhóm các testcase liên quan đến hàm applyCoupon (hàm áp dụng mã khuyến mãi cho sản phẩm)
+    QUnit.module("Apply Coupon", function () {
+      // Tạo một mảng sản phẩm để sử dụng trong các test case
+      let products = [
+        { id: 0, img: './img/anh1.jpg', name: 'Áo khoác nam AKHTK301', classify: 'Áo khoác', detail: { cl: 'DẠ (16% COTON, 78% POLY, 6% SPANDEX)', d: 'Relax', }, price: 869 },
+        { id: 1, img: './img/anh2.jpg', name: 'Áo khoác nam AKBTK301', classify: 'Áo khoác', detail: { cl: 'Jeans cotton (100% cotton)', d: 'Regular', }, price: 699 },
+        { id: 2, img: './img/anh3.jpg', name: 'Áo khoác blazer ABZTK301', classify: 'Áo khoác', detail: { cl: 'VẢI TỔNG HỢP (58% Tylen, 40% Rayon, 2% Spandex)', d: 'Regular', }, price: 1195 }
+      ];
+
+      // Trường hợp mã khuyến mãi hợp lệ và đủ điều kiện
+      QUnit.test('Valid and eligible coupon', assert => {
+        let actual = applyCoupon(products, "SALE10");
+        // Tạo một mảng các sản phẩm sau khi giảm giá
+        let expected = [
+          { id: 0, img: './img/anh1.jpg', name: 'Áo khoác nam AKHTK301', classify: 'Áo khoác', detail: { cl: 'DẠ (16% COTON, 78% POLY, 6% SPANDEX)', d: 'Relax', }, price: 838 },
+          { id: 1, img: './img/anh2.jpg', name: 'Áo khoác nam AKBTK301', classify: 'Áo khoác', detail: { cl: 'Jeans cotton (100% cotton)', d: 'Regular', }, price: 674 },
+          { id: 2, img: './img/anh3.jpg', name: 'Áo khoác blazer ABZTK301', classify: 'Áo khoác', detail: { cl: 'VẢI TỔNG HỢP (58% Tylen, 40% Rayon, 2% Spandex)', d: 'Regular', }, price: 1152 }
+        ];
+        // So sánh kết quả với giá trị mong đợi
+        assert.deepEqual(actual, expected, "SALE10 coupon applied");
+        // Kiểm tra actual và products có phải là cùng một mảng hay không
+        assert.notStrictEqual(actual, products, "Passed!");
+      });
+      // Trường hợp mã khuyến mãi hợp lệ nhưng không đủ điều kiện
+      QUnit.test('Valid but ineligible coupon', assert => {
+        let actual = applyCoupon(products, "SALE30");
+        let expected = "Đơn hàng của bạn phải từ 3000 để sử dụng mã khuyến mãi này";
+        assert.deepEqual(actual, expected, "'SALE30' coupon not applied");
+      });
+      // Trường hợp mã khuyến mãi không hợp lệ
+      QUnit.test('Invalid coupon', assert => {
+        let actual = applyCoupon(products, "SALEABC");
+        let expected = "Mã khuyến mãi không hợp lệ"
+        assert.deepEqual(actual, expected, "'SALEABC' coupon not valid");
+      });
+    });
+  </script>
+</body>
