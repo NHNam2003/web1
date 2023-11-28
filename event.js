@@ -16,30 +16,30 @@ function createStorage(key) {
 
         // them du lieu tu locastorage
         set(data = undefined) {
-            if(data != undefined) {
+            if (data != undefined) {
                 store.push(data)
                 save()
             }
         },
 
-            // chinh sua du lieu tu locastorage
-            edit(data = undefined) {
-                if(data != undefined) {
-                    store.forEach((item,idx) => {
-                        if(item.id == data.id) {
-                            store.splice(idx,1,data);
-                        }
-                    })
-                }
-                save()
-            },
+        // chinh sua du lieu tu locastorage
+        edit(data = undefined) {
+            if (data != undefined) {
+                store.forEach((item, idx) => {
+                    if (item.id == data.id) {
+                        store.splice(idx, 1, data);
+                    }
+                })
+            }
+            save()
+        },
 
         // xoa du lieu tu locastorage
         remove(id = undefined) {
-            if(id != undefined) {
-                store.forEach((item,idx) => {
-                    if(item.id == id) {
-                        store.splice(idx,1)
+            if (id != undefined) {
+                store.forEach((item, idx) => {
+                    if (item.id == id) {
+                        store.splice(idx, 1)
                     }
                 })
                 save()
@@ -499,23 +499,83 @@ const saleList = [
     },
 ]
 
-if(items.get().length == 0) {
-    for(var i=0; i < list.length; i++) {
+if (items.get().length == 0) {
+    for (var i = 0; i < list.length; i++) {
         items.set(list[i])
     }
 }
 
-if(accounts.get().length == 0) {
-    accounts.set({id: 0, name: 'admin', email: 'admin@gmail.com', password: 'khongcomatkhau', blackList: false, admin: true,})
-    accounts.set({id: 1, name: 'nam', email: 'nam@gmail.com', password: 'khongcomatkhau', blackList: false, admin: false, cartList: [], orderList: [], realName: 'Nguyễn Hữu Nam', phone: '0947763000', location: 'Đường An Dương Vương Phường 3 Quận 5'})
+if (accounts.get().length == 0) {
+    accounts.set({ id: 0, name: 'admin', email: 'admin@gmail.com', password: 'khongcomatkhau', blackList: false, admin: true, })
+    accounts.set({ id: 1, name: 'nam', email: 'nam@gmail.com', password: 'khongcomatkhau', blackList: false, admin: false, cartList: [], orderList: [], realName: 'Nguyễn Hữu Nam', phone: '0947763000', location: 'Đường An Dương Vương Phường 3 Quận 5' })
 }
 
-if(saleItems.get() == 0) {
-    for(var i=0; i < saleList.length; i++) {
+if (saleItems.get() == 0) {
+    for (var i = 0; i < saleList.length; i++) {
         saleItems.set(saleList[i])
     }
 }
 
+function calculateTotal(products) {
+    const total = products.reduce((accumulator, product) => {
+      const productPrice = product.quantity * product.price;
+      return accumulator + productPrice;
+    }, 0);
+    return total;
+  }
+  
+  function checkPasswordFormat(password) {
+    var regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\W)(?=.*\d).{6,}$/;
+    return regex.test(password);
+  }
+  
+function searchByName(name) {
+    let result = [];
+    for (let product of list) {
+      let lowerProductName = product.name.toLowerCase();
+      let lowerName = name.toLowerCase();
+      if (lowerProductName.includes(lowerName)) {
+        result.push(product);
+      }
+    }
+    return result;
+  }
+  
+  function sortByPriceAscending(products) {
+    let sortedProducts = [...products];
+    sortedProducts.sort(function (a, b) {
+      return a.price - b.price;
+    });
+    return sortedProducts;
+  }
+  
+  function applyCoupon(products, code) {
+    const coupons = [
+      { code: 'SALE10', minPurchase: 1000, maxDiscount: 100 },
+      { code: 'SALE20', minPurchase: 2000, maxDiscount: 300 },
+      { code: 'SALE30', minPurchase: 3000, maxDiscount: 500 }, 
+    ];
+  
+    const coupon = coupons.find((c) => c.code === code);
+    if (!coupon) return 'Mã khuyến mãi không hợp lệ';
+    total = products.reduce((accumulator, product) => {
+      return accumulator + product.price;
+    }, 0);
+    if (total < coupon.minPurchase)
+      return `Đơn hàng của bạn phải từ ${coupon.minPurchase} để sử dụng mã khuyến mãi này`;
+    const discount = Math.min((total * coupon.code.slice(4)) / 100, coupon.maxDiscount);
+    const discountProducts = [];
+    for (let product of products) {
+      const ratio = product.price / total;
+      const productDiscount = discount * ratio;
+      const newProduct = {
+        ...product,
+        price: Math.round(product.price - productDiscount),
+      };
+      discountProducts.push(newProduct);
+    }
+    return discountProducts;
+  }
 //-------------------------------------------------------------------------------
 const itemsApi = items.get()
 var accountApi = accounts.get()
@@ -536,13 +596,13 @@ function renderRemoveItems() {
         <li class="admin-right-list__item">
             <img class="admin-right-img" src="${item.img}" atl="loi anh"/>
             <p class="admin-right-name">${item.name}</p>
-            <p class="admin-right-price">${item.price >=1000 ? 
-                String(item.price).slice(0,String(item.price).length - 3) + '.' + String(item.price).slice(String(item.price).length - 3 ,String(item.price).length) : 
-                item.price}.000₫
+            <p class="admin-right-price">${item.price >= 1000 ?
+            String(item.price).slice(0, String(item.price).length - 3) + '.' + String(item.price).slice(String(item.price).length - 3, String(item.price).length) :
+            item.price}.000₫
             </p>
             <button onclick="showAsk(${item.id})" class="remove">&times;</button>
         </li>`).join('')
-        
+
     $('.admin-right-list').innerHTML = html
 }
 
@@ -551,21 +611,21 @@ function renderEditItems() {
         <li class="admin-right-list__item">
             <img class="admin-right-img" src="${item.img}" atl="loi anh"/>
             <p class="admin-right-name">${item.name}</p>
-            <p class="admin-right-price">${item.price >=1000 ? 
-                String(item.price).slice(0,String(item.price).length - 3) + '.' + String(item.price).slice(String(item.price).length - 3 ,String(item.price).length) : 
-                item.price}.000₫
+            <p class="admin-right-price">${item.price >= 1000 ?
+            String(item.price).slice(0, String(item.price).length - 3) + '.' + String(item.price).slice(String(item.price).length - 3, String(item.price).length) :
+            item.price}.000₫
             </p>
             <p class="admin-right-price">${item.detail.cl}</p>
             <p class="admin-right-price">${item.detail.d}</p>
             <button onclick="showEdit(${item.id})" class="edit">Sửa</button>
-        </li>`).join('')    
+        </li>`).join('')
     $('.admin-right-list').innerHTML = html
 }
 
 function showAsk(id) {
     var idx
     itemsApi.forEach(item => {
-        if(item.id == id) {
+        if (item.id == id) {
             idx = item
         }
     })
@@ -575,8 +635,8 @@ function showAsk(id) {
     <li class="admin-right-list__item" style="border: 0;">
         <img class="admin-right-img" style="width: 15%;" src="${idx.img}" atl="loi anh"/>
         <p class="admin-right-name" style="width: auto;">${idx.name}</p>
-        <p class="admin-right-price" style="width: auto;">${idx.price >=1000 ? 
-            String(idx.price).slice(0,String(idx.price).length - 3) + '.' + String(idx.price).slice(String(idx.price).length - 3 ,String(idx.price).length) : 
+        <p class="admin-right-price" style="width: auto;">${idx.price >= 1000 ?
+            String(idx.price).slice(0, String(idx.price).length - 3) + '.' + String(idx.price).slice(String(idx.price).length - 3, String(idx.price).length) :
             idx.price}.000₫
         </p>
     </li>
@@ -598,9 +658,9 @@ function removeItem(id) {
             <li class="admin-right-list__item">
                 <img class="admin-right-img" src="${item.img}" atl="loi anh"/>
                 <p class="admin-right-name">${item.name}</p>
-                <p class="admin-right-price">${item.price >=1000 ? 
-                    String(item.price).slice(0,String(item.price).length - 3) + '.' + String(item.price).slice(String(item.price).length - 3 ,String(item.price).length) : 
-                    item.price}.000₫</p>
+                <p class="admin-right-price">${item.price >= 1000 ?
+            String(item.price).slice(0, String(item.price).length - 3) + '.' + String(item.price).slice(String(item.price).length - 3, String(item.price).length) :
+            item.price}.000₫</p>
                 <button onclick="showAsk(${item.id})" class="remove">&times;</button>
             </li>`).join('')
     $('.admin-right-list').innerHTML = html
@@ -608,10 +668,10 @@ function removeItem(id) {
 }
 
 $$('.subadmin-list_items').forEach(item => {
-    item.onclick = function() {
-        if(this.innerText == 'Xóa sản phẩm') {
+    item.onclick = function () {
+        if (this.innerText == 'Xóa sản phẩm') {
             renderRemoveItems()
-        } else if(this.innerText == 'Thêm sản phẩm') {
+        } else if (this.innerText == 'Thêm sản phẩm') {
             $('.admin-right-list').innerHTML = `
             <li class="admin-right-list__item" style="display: block;">
                 <input type="file" class="input-img" accept="image/png, image/jpeg" />
@@ -647,43 +707,43 @@ $$('.subadmin-list_items').forEach(item => {
                 $$('.error-input-name')[2].innerText = ''
             }
 
-            $('.input-img').onchange = function() {
+            $('.input-img').onchange = function () {
                 var file = URL.createObjectURL(this.files[0])
                 $('.preview-img').src = file
                 $$('.error-input-name')[0].innerText = ''
             }
 
-            $('.input-name').onblur = function() { 
+            $('.input-name').onblur = function () {
                 itemsApi.forEach(item => {
-                    if(item.name == $('.input-name').value) {
+                    if (item.name == $('.input-name').value) {
                         $$('.error-input-name')[1].innerText = 'Tên sản phẩm đã tồn tại'
                     }
                 })
-                
-                if(this.value == '') {
+
+                if (this.value == '') {
                     $$('.error-input-name')[1].innerText = 'Chưa nhập tên sản phẩm'
                 }
             }
 
-            $('.input-price').onblur = function() { 
-                if(this.value == '' || this.value == 0) {
+            $('.input-price').onblur = function () {
+                if (this.value == '' || this.value == 0) {
                     $$('.error-input-name')[2].innerText = 'Chưa nhập giá'
                 }
             }
 
-            $('.input-name').oninput = function() {
+            $('.input-name').oninput = function () {
                 $$('.error-input-name')[1].innerText = ''
             }
 
-            $('.add-list-item').onclick = function() {
+            $('.add-list-item').onclick = function () {
                 var up = true
                 var max = 0
                 itemsApi.forEach(item => {
-                    if(item.id > max) {
+                    if (item.id > max) {
                         max = item.id
                     }
                 })
-                
+
                 var data = {
                     id: max + 1,
                     img: this.parentElement.querySelector('.preview-img').src,
@@ -694,30 +754,30 @@ $$('.subadmin-list_items').forEach(item => {
                         d: this.parentElement.parentElement.querySelector('#input-content2').value,
                     }
                 }
-                
-                if((this.parentElement.querySelector('.preview-img').src).indexOf('blob') == -1) {
+
+                if ((this.parentElement.querySelector('.preview-img').src).indexOf('blob') == -1) {
                     $$('.error-input-name')[0].innerText = 'Chưa chọn ảnh'
                     up = false
                 }
-                
-                if(this.parentElement.querySelector('.input-name').value == '') {
+
+                if (this.parentElement.querySelector('.input-name').value == '') {
                     $$('.error-input-name')[1].innerText = 'Chưa nhập tên sản phẩm'
                     up = false
                 }
 
                 itemsApi.forEach(item => {
-                    if(item.name == $('.input-name').value) {
+                    if (item.name == $('.input-name').value) {
                         $$('.error-input-name')[1].innerText = 'Tên sản phẩm đã tồn tại'
                         up = false
                     }
                 })
 
-                if(this.parentElement.querySelector('.input-price').value == 0 || this.parentElement.querySelector('.input-price').value == '') {
+                if (this.parentElement.querySelector('.input-price').value == 0 || this.parentElement.querySelector('.input-price').value == '') {
                     $$('.error-input-name')[2].innerText = 'Chưa nhập giá'
                     up = false
                 }
 
-                if(up) {
+                if (up) {
                     this.parentElement.querySelector('.preview-img').src = ''
                     this.parentElement.querySelector('.input-name').value = ''
                     this.parentElement.querySelector('.input-price').value = ''
@@ -727,23 +787,23 @@ $$('.subadmin-list_items').forEach(item => {
                     render(0)
                 }
             }
-        } else if(this.innerText == 'Sửa sản phẩm') {
+        } else if (this.innerText == 'Sửa sản phẩm') {
             renderEditItems()
-        } else if(this.innerText == 'Tất cả đơn hàng') {
+        } else if (this.innerText == 'Tất cả đơn hàng') {
             renderOrderItemsAll()
-        } else if(this.innerText == 'Đơn hàng chưa duyệt') {
+        } else if (this.innerText == 'Đơn hàng chưa duyệt') {
             renderOrderItemsApproved()
-        } else if(this.innerText == 'Đơn hàng đã duyệt') {
+        } else if (this.innerText == 'Đơn hàng đã duyệt') {
             renderOrderItemsApproved(1)
-        } else if(this.innerText == 'Tất cả') {
+        } else if (this.innerText == 'Tất cả') {
             renderStatistical()
-        } else if(this.innerText == 'Áo khoác') {
+        } else if (this.innerText == 'Áo khoác') {
             renderStatistical(this.innerText)
-        } else if(this.innerText == 'Áo len') {
+        } else if (this.innerText == 'Áo len') {
             renderStatistical(this.innerText)
-        } else if(this.innerText == 'Áo hoodie') {
+        } else if (this.innerText == 'Áo hoodie') {
             renderStatistical(this.innerText)
-        } else if(this.innerText == 'Áo thun các loại') {
+        } else if (this.innerText == 'Áo thun các loại') {
             renderStatistical(this.innerText)
         }
     }
@@ -751,8 +811,8 @@ $$('.subadmin-list_items').forEach(item => {
 
 // thống kê
 function renderStatistical(classify = undefined) {
-    $('.admin-right-list').innerHTML = 
-    `<li class="admin-right-list__item" style="border: 0">
+    $('.admin-right-list').innerHTML =
+        `<li class="admin-right-list__item" style="border: 0">
         <span class="label-statistical">Ngày:</span>
         <input class="input-statistical" id="to-day" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');" maxlength="2" placeholder="nhập ngày bắt đầu tìm"/>
         <span class="label-statistical">Tháng:</span>
@@ -781,73 +841,73 @@ function renderStatistical(classify = undefined) {
         }
     })
 
-    $$('.input-statistical').forEach((input,idx) => {
+    $$('.input-statistical').forEach((input, idx) => {
         input.onblur = function () {
-            if(idx == 0 || idx == 3 ) {
-                if(this.value > 31 || this.value == 0) {
+            if (idx == 0 || idx == 3) {
+                if (this.value > 31 || this.value == 0) {
                     this.value = 1
                 }
             }
 
-            if(idx == 1 || idx == 4) {
-                if(this.value > 12 || this.value == 0) {
+            if (idx == 1 || idx == 4) {
+                if (this.value > 12 || this.value == 0) {
                     this.value = 1
                 }
             }
         }
     })
 
-    $('.search-Statistical').onclick = function() {
+    $('.search-Statistical').onclick = function () {
         var total = 0
         var quantity = 0
-        var maxItem 
+        var maxItem
         var max = 0
         orderItemAllApi.forEach(order => {
             order.order.forEach(orderitem => {
                 var days = order.day.split('/')
-                if(Number($('#to-day').value) <= Number($('#from-day').value) && Number($('#to-month').value) <= Number($('#from-month').value)) {
-                    if(order.approved) {
-                        if(classify == undefined) {
-                            if(Number(days[0]) >= Number($('#to-day').value) && Number(days[0]) <= Number($('#from-day').value) && 
-                               Number(days[1]) >= Number($('#to-month').value) && Number(days[1]) <= Number($('#from-month').value)) {
+                if (Number($('#to-day').value) <= Number($('#from-day').value) && Number($('#to-month').value) <= Number($('#from-month').value)) {
+                    if (order.approved) {
+                        if (classify == undefined) {
+                            if (Number(days[0]) >= Number($('#to-day').value) && Number(days[0]) <= Number($('#from-day').value) &&
+                                Number(days[1]) >= Number($('#to-month').value) && Number(days[1]) <= Number($('#from-month').value)) {
                                 total += orderitem.price
                                 quantity += orderitem.quantity
-                                if(max < orderitem.quantity) {
+                                if (max < orderitem.quantity) {
                                     maxItem = orderitem.name
                                 }
-                            } else if(Number(days[1]) >= Number($('#to-month').value) && Number(days[1]) <= Number($('#from-month').value)) {
+                            } else if (Number(days[1]) >= Number($('#to-month').value) && Number(days[1]) <= Number($('#from-month').value)) {
                                 total += orderitem.price
                                 quantity += orderitem.quantity
-                                if(max < orderitem.quantity) {
+                                if (max < orderitem.quantity) {
                                     maxItem = orderitem.name
                                 }
-                            } else if(Number(days[0]) >= Number($('#to-day').value) && Number(days[0]) <= Number($('#from-day').value)) {
+                            } else if (Number(days[0]) >= Number($('#to-day').value) && Number(days[0]) <= Number($('#from-day').value)) {
                                 total += orderitem.price
                                 quantity += orderitem.quantity
-                                if(max < orderitem.quantity) {
+                                if (max < orderitem.quantity) {
                                     maxItem = orderitem.name
                                 }
                             }
                         } else {
                             itemsApi.forEach(item => {
-                                if(item.name == orderitem.name && item.classify == classify) {
-                                    if(Number(days[0]) >= Number($('#to-day').value) && Number(days[0]) <= Number($('#from-day').value) && 
-                                       Number(days[1]) >= Number($('#to-month').value) && Number(days[1]) <= Number($('#from-month').value)) {
-                                    total += orderitem.price
-                                    quantity += orderitem.quantity
-                                    if(max < orderitem.quantity) {
-                                        maxItem = orderitem.name
-                                    }
-                                    } else if(Number(days[1]) >= Number($('#to-month').value) && Number(days[1]) <= Number($('#from-month').value)) {
+                                if (item.name == orderitem.name && item.classify == classify) {
+                                    if (Number(days[0]) >= Number($('#to-day').value) && Number(days[0]) <= Number($('#from-day').value) &&
+                                        Number(days[1]) >= Number($('#to-month').value) && Number(days[1]) <= Number($('#from-month').value)) {
                                         total += orderitem.price
                                         quantity += orderitem.quantity
-                                        if(max < orderitem.quantity) {
+                                        if (max < orderitem.quantity) {
                                             maxItem = orderitem.name
                                         }
-                                    } else if(Number(days[0]) >= Number($('#to-day').value) && Number(days[0]) <= Number($('#from-day').value)) {
+                                    } else if (Number(days[1]) >= Number($('#to-month').value) && Number(days[1]) <= Number($('#from-month').value)) {
                                         total += orderitem.price
                                         quantity += orderitem.quantity
-                                        if(max < orderitem.quantity) {
+                                        if (max < orderitem.quantity) {
+                                            maxItem = orderitem.name
+                                        }
+                                    } else if (Number(days[0]) >= Number($('#to-day').value) && Number(days[0]) <= Number($('#from-day').value)) {
+                                        total += orderitem.price
+                                        quantity += orderitem.quantity
+                                        if (max < orderitem.quantity) {
                                             maxItem = orderitem.name
                                         }
                                     }
@@ -858,9 +918,9 @@ function renderStatistical(classify = undefined) {
                 }
             })
         })
-        $$('.admin-right-list__item')[3].innerHTML = 
-        `<p class="label-statistical">Tổng số sản phẩm bán ra: <span style="color: #2f86eb; font-size: 2.5rem">${quantity}</span> cái</p>
-        <p class="label-statistical">Tổng số tiền thu đươc: <span style="color: #f33a58; font-size: 2.5rem">${total >=1000 ? String(total).slice(0,String(total).length - 3) + '.' + String(total).slice(String(total).length - 3 ,String(total).length) : total}.000₫</span></p>
+        $$('.admin-right-list__item')[3].innerHTML =
+            `<p class="label-statistical">Tổng số sản phẩm bán ra: <span style="color: #2f86eb; font-size: 2.5rem">${quantity}</span> cái</p>
+        <p class="label-statistical">Tổng số tiền thu đươc: <span style="color: #f33a58; font-size: 2.5rem">${total >= 1000 ? String(total).slice(0, String(total).length - 3) + '.' + String(total).slice(String(total).length - 3, String(total).length) : total}.000₫</span></p>
         <p class="label-statistical">Sản phẩm bán nhiều nhất: ${maxItem || 'Không có'}</p>`
     }
 }
@@ -869,7 +929,7 @@ function renderStatistical(classify = undefined) {
 function showEdit(id) {
     var idx
     itemsApi.forEach(item => {
-        if(item.id == id) {
+        if (item.id == id) {
             idx = item
         }
     })
@@ -908,11 +968,11 @@ function showEdit(id) {
         $('.ask').classList.remove('ask--active')
     }
 
-    $('.input-price').onclick = function() {
+    $('.input-price').onclick = function () {
         this.select()
     }
 
-    $('.input-name').onclick = function() {
+    $('.input-name').onclick = function () {
         this.select()
     }
 
@@ -920,36 +980,36 @@ function showEdit(id) {
         this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')
     }
 
-    $('.input-img').onchange = function() {
+    $('.input-img').onchange = function () {
         var file = URL.createObjectURL(this.files[0])
         $('.preview-img').src = file
     }
 
-    $('.input-name').onblur = function() { 
+    $('.input-name').onblur = function () {
         itemsApi.forEach(item => {
-            if(item.name == $('.input-name').value) {
+            if (item.name == $('.input-name').value) {
                 $$('.error-input-name')[1].innerText = 'Tên sản phẩm đã tồn tại'
             }
         })
-        
-        if(this.value == '') {
+
+        if (this.value == '') {
             $$('.error-input-name')[1].innerText = 'Chưa nhập tên sản phẩm'
         }
     }
 
-    $('.input-price').onblur = function() { 
-        if(this.value == '' || this.value == 0) {
+    $('.input-price').onblur = function () {
+        if (this.value == '' || this.value == 0) {
             $$('.error-input-name')[2].innerText = 'Chưa nhập giá'
         }
     }
 
-    $('.input-name').oninput = function() {
+    $('.input-name').oninput = function () {
         $$('.error-input-name')[1].innerText = ''
     }
 
-    $('.save').onclick = function() {
+    $('.save').onclick = function () {
         var edit = true
-        
+
         var data = {
             id: id,
             img: this.parentElement.parentElement.querySelector('.preview-img').src,
@@ -960,25 +1020,25 @@ function showEdit(id) {
                 d: this.parentElement.parentElement.querySelector('#input-content2').value
             }
         }
-        
-        if(this.parentElement.parentElement.querySelector('.input-name').value == '') {
+
+        if (this.parentElement.parentElement.querySelector('.input-name').value == '') {
             $$('.error-input-name')[1].innerText = 'Chưa nhập tên sản phẩm'
             edit = false
         }
 
         itemsApi.forEach(item => {
-            if(item.name == $('.input-name').value && item.id != id) {
+            if (item.name == $('.input-name').value && item.id != id) {
                 $$('.error-input-name')[1].innerText = 'Tên sản phẩm đã tồn tại'
                 edit = false
             }
         })
 
-        if(this.parentElement.parentElement.querySelector('.input-price').value == 0 || this.parentElement.parentElement.querySelector('.input-price').value == '') {
+        if (this.parentElement.parentElement.querySelector('.input-price').value == 0 || this.parentElement.parentElement.querySelector('.input-price').value == '') {
             $$('.error-input-name')[2].innerText = 'Chưa nhập giá'
             edit = false
         }
 
-        if(edit) {
+        if (edit) {
             items.edit(data)
             showSuccessEditItem()
             render(0)
@@ -990,14 +1050,14 @@ function showEdit(id) {
 
 // renderSaleItem
 function renderSaleItems() {
-    var html = saleItemsApi.map(item => 
+    var html = saleItemsApi.map(item =>
         `<li class="container-item-selling__list-item">
             <img src="${item.img}" alt="" class="container-item-selling__list-item-img item-sale">
             <div class="container-item-wrap">
                 <p class="container-item-wrap__name">${item.name}</p>
                 <div style="display: flex; width: 100%; justify-content: center;">
-                    <span style="font-size: 1.4rem; margin-right: 8px; text-decoration: line-through;">${item.priceOld >=1000 ? String(item.priceOld).slice(0,String(item.priceOld).length - 3) + '.' + String(item.priceOld).slice(String(item.priceOld).length - 3 ,String(item.priceOld).length) : item.priceOld}.000₫</span>
-                    <p class="container-item-wrap__price">${item.price >=1000 ? String(item.price).slice(0,String(item.price).length - 3) + '.' + String(item.price).slice(String(item.price).length - 3 ,String(item.price).length) : item.price}.000₫</p>
+                    <span style="font-size: 1.4rem; margin-right: 8px; text-decoration: line-through;">${item.priceOld >= 1000 ? String(item.priceOld).slice(0, String(item.priceOld).length - 3) + '.' + String(item.priceOld).slice(String(item.priceOld).length - 3, String(item.priceOld).length) : item.priceOld}.000₫</span>
+                    <p class="container-item-wrap__price">${item.price >= 1000 ? String(item.price).slice(0, String(item.price).length - 3) + '.' + String(item.price).slice(String(item.price).length - 3, String(item.price).length) : item.price}.000₫</p>
                 </div>
             </div>
             <div class="btn-wrap">
@@ -1017,41 +1077,41 @@ var sort = undefined
 var buy = false
 function render(n, sreachItem = undefined, classify = undefined, to = undefined, from = undefined) {
     var indexHTML = itemsApi
-    if(sreachItem != undefined) {
+    if (sreachItem != undefined) {
         var html1 = []
         indexHTML.forEach(item => {
-            if(((item.name).toLowerCase()).indexOf(sreachItem.toLowerCase()) != -1) {
+            if (((item.name).toLowerCase()).indexOf(sreachItem.toLowerCase()) != -1) {
                 html1.push(item)
             }
         })
         indexHTML = html1
     }
 
-    if(classify != undefined) {
+    if (classify != undefined) {
         var html2 = []
         indexHTML.forEach(item => {
-            if(item.classify == classify) {
+            if (item.classify == classify) {
                 html2.push(item)
             }
         })
         indexHTML = html2
     }
 
-    if(to != undefined && from != undefined) {
+    if (to != undefined && from != undefined) {
         var html3 = []
         indexHTML.forEach(item => {
-            if(item.price*1000 >= to && item.price*1000 <= from) {
+            if (item.price * 1000 >= to && item.price * 1000 <= from) {
                 html3.push(item)
             }
         })
         indexHTML = html3
     }
 
-    if(sort == true) {
+    if (sort == true) {
         var html1 = []
-        for(var i = 0; i < indexHTML.length; i++) {
-            for(var j = i + 1; j < indexHTML.length; j++) {
-                if(indexHTML[i].price > indexHTML[j].price) {
+        for (var i = 0; i < indexHTML.length; i++) {
+            for (var j = i + 1; j < indexHTML.length; j++) {
+                if (indexHTML[i].price > indexHTML[j].price) {
                     var temp = indexHTML[j]
                     indexHTML[j] = indexHTML[i]
                     indexHTML[i] = temp
@@ -1060,11 +1120,11 @@ function render(n, sreachItem = undefined, classify = undefined, to = undefined,
             html1.push(indexHTML[i])
         }
         indexHTML = html1
-    } else if(sort == false) {
+    } else if (sort == false) {
         var html1 = []
-        for(var i = 0; i < indexHTML.length; i++) {
-            for(var j = i + 1; j < indexHTML.length; j++) {
-                if(indexHTML[i].price < indexHTML[j].price) {
+        for (var i = 0; i < indexHTML.length; i++) {
+            for (var j = i + 1; j < indexHTML.length; j++) {
+                if (indexHTML[i].price < indexHTML[j].price) {
                     var temp = indexHTML[j]
                     indexHTML[j] = indexHTML[i]
                     indexHTML[i] = temp
@@ -1076,12 +1136,12 @@ function render(n, sreachItem = undefined, classify = undefined, to = undefined,
     }
     var html = ''
     var idx = 0
-    for(var i=n*4; i < indexHTML.length; i++) {
-        if(idx < 4) {
+    for (var i = n * 4; i < indexHTML.length; i++) {
+        if (idx < 4) {
             var s = String(indexHTML[i].price)
-            var PriceS = s.slice(0,s.length - 3) + '.' + s.slice(s.length - 3 ,s.length)
-            html = html + 
-                    `<li style="width: calc(22% + 6px); animation: fadebottom linear 0.5s;" class="container-item-selling__list-item">
+            var PriceS = s.slice(0, s.length - 3) + '.' + s.slice(s.length - 3, s.length)
+            html = html +
+                `<li style="width: calc(22% + 6px); animation: fadebottom linear 0.5s;" class="container-item-selling__list-item">
                         <img src="${indexHTML[i].img}" alt="" class="container-item-selling__list-item-img">
                         <div class="btn-wrap">
                             <button class="buy">Mua ngay</button>
@@ -1093,40 +1153,40 @@ function render(n, sreachItem = undefined, classify = undefined, to = undefined,
 
                         <div class="container-item-wrap">
                             <p class="container-item-wrap__name">${indexHTML[i].name}</p>
-                            <p class="container-item-wrap__price">${indexHTML[i].price >=1000 ? PriceS : indexHTML[i].price}.000₫</p>
+                            <p class="container-item-wrap__price">${indexHTML[i].price >= 1000 ? PriceS : indexHTML[i].price}.000₫</p>
                         </div>
                     </li>`
-            idx +=1
+            idx += 1
         }
     }
-    
-    if(html == '') {
+
+    if (html == '') {
         $('.error-sreach').innerText = 'Không tìm được sản phẩm'
     } else {
         $('.container-item-selling__list').innerHTML = html
-        renderGagination(indexHTML,sreachItem,classify,to,from)
+        renderGagination(indexHTML, sreachItem, classify, to, from)
     }
 
-    $$('.cart-add').forEach((item,idx) => {
+    $$('.cart-add').forEach((item, idx) => {
         item.onclick = function (e) {
-            if(buy) {
+            if (buy) {
                 var trung = 0
-                if(idx >= 4) {
+                if (idx >= 4) {
                     saleItemsApi.forEach(item => {
-                        if(this.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText == item.name) {
+                        if (this.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText == item.name) {
                             accountApi[accountActive].cartList.forEach(item => {
-                                if(item.name == this.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText) {
+                                if (item.name == this.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText) {
                                     trung = 1
                                 }
                             })
 
-                            if(trung == 0) {
+                            if (trung == 0) {
                                 accountApi[accountActive].cartList.push({
                                     img: item.img,
                                     name: item.name,
                                     price: item.price,
                                     quantity: 1,
-                                    approved: false,        
+                                    approved: false,
                                 })
                                 save()
                                 renderCart()
@@ -1139,13 +1199,13 @@ function render(n, sreachItem = undefined, classify = undefined, to = undefined,
                 } else {
                     var trung = 0
                     itemsApi.forEach(item => {
-                        if(this.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText == item.name) {
+                        if (this.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText == item.name) {
                             accountApi[accountActive].cartList.forEach(item => {
-                                if(item.name == this.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText) {
+                                if (item.name == this.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText) {
                                     trung = 1
                                 }
                             })
-                            if(trung == 0) {
+                            if (trung == 0) {
                                 accountApi[accountActive].cartList.push({
                                     img: item.img,
                                     name: item.name,
@@ -1169,29 +1229,29 @@ function render(n, sreachItem = undefined, classify = undefined, to = undefined,
         }
     })
 
-    $$('.buy').forEach((item,idx) => {
+    $$('.buy').forEach((item, idx) => {
         item.onclick = function (e) {
-            if(buy) {                
-                if(idx <= 3) {
+            if (buy) {
+                if (idx <= 3) {
                     var trung = 0
                     itemsApi.forEach(item => {
-                        if(item.name == this.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText) {
+                        if (item.name == this.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText) {
                             accountApi[accountActive].cartList.forEach(item => {
-                                if(item.name == this.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText) {
+                                if (item.name == this.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText) {
                                     trung = 1
-                                    item.quantity +=1 
+                                    item.quantity += 1
                                 }
                             })
 
-                            if(trung == 0) {
+                            if (trung == 0) {
                                 accountApi[accountActive].cartList.push({
                                     img: item.img,
                                     name: item.name,
                                     price: item.price,
                                     quantity: 1,
                                     approved: false,
-                                
-                                }) 
+
+                                })
                             }
                             save()
                             renderCart()
@@ -1202,12 +1262,12 @@ function render(n, sreachItem = undefined, classify = undefined, to = undefined,
                 } else {
                     var trung = 0
                     accountApi[accountActive].cartList.forEach(item => {
-                        if(item.name == this.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText) {
+                        if (item.name == this.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText) {
                             trung = 1
-                            item.quantity +=1 
+                            item.quantity += 1
                         }
                     })
-                    if(trung == 0) {
+                    if (trung == 0) {
                         accountApi[accountActive].cartList.push({
                             img: (item.parentElement.parentElement.querySelector('.container-item-selling__list-item-img')).attributes[0].value,
                             name: item.parentElement.parentElement.querySelector('.container-item-wrap__name').innerText,
@@ -1227,7 +1287,7 @@ function render(n, sreachItem = undefined, classify = undefined, to = undefined,
             e.stopPropagation()
         }
     })
-    
+
     $$('.container-item-selling__list-item').forEach(item => {
         item.onclick = () => {
             $('.showcart').classList.add('showcart--active')
@@ -1235,12 +1295,12 @@ function render(n, sreachItem = undefined, classify = undefined, to = undefined,
         }
     })
 
-    $$('.container-item-selling__list-item').forEach((item,index) => {
-        item.onclick = function() {
-            if(index < 4) {
+    $$('.container-item-selling__list-item').forEach((item, index) => {
+        item.onclick = function () {
+            if (index < 4) {
                 var idx
                 itemsApi.forEach(item => {
-                    if(this.querySelector('.container-item-wrap__name').innerText == item.name) {
+                    if (this.querySelector('.container-item-wrap__name').innerText == item.name) {
                         idx = item
                     }
                 })
@@ -1250,7 +1310,7 @@ function render(n, sreachItem = undefined, classify = undefined, to = undefined,
             } else {
                 var idx
                 saleItemsApi.forEach(item => {
-                    if(this.querySelector('.container-item-wrap__name').innerText == item.name) {
+                    if (this.querySelector('.container-item-wrap__name').innerText == item.name) {
                         idx = item
                     }
                 })
@@ -1266,19 +1326,19 @@ render(0)
 // tim kiem san pham
 const sreach = $('.heading-wrap-container__input')
 
-sreach.onkeydown = function(e) {
-    if(e.which == 13) {
+sreach.onkeydown = function (e) {
+    if (e.which == 13) {
         var to = $('#to').value
         var from = $('#from').value
-        if(to == 0 || to == '') {
+        if (to == 0 || to == '') {
             to = undefined
         }
-        if(from == 0 || from == '') {
+        if (from == 0 || from == '') {
             from = undefined
         }
-        render(0,this.value,undefined,to,from)
+        render(0, this.value, undefined, to, from)
         $('.advanced-search').classList.remove('search--active')
-        if($('.error-sreach').innerText == '') {
+        if ($('.error-sreach').innerText == '') {
             $$('.header-footer__list-item')[7].click()
         }
         to = ''
@@ -1295,67 +1355,67 @@ $('.heading-wrap-container__btn').onclick = () => {
     var from = $('#from').value
     var classify
     $$('.classify-radio').forEach(item => {
-        if(item.checked) {
+        if (item.checked) {
             classify = item.parentElement.innerText
-            if(item.parentElement.innerText == 'Tất cả') {
+            if (item.parentElement.innerText == 'Tất cả') {
                 classify = undefined
             }
         }
     })
-    if(to == 0 || to == '') {
+    if (to == 0 || to == '') {
         to = undefined
     }
 
-    if(from == 0 || from == '') {
+    if (from == 0 || from == '') {
         from = undefined
     }
 
-    render(0,sreach.value,classify,to,from)
+    render(0, sreach.value, classify, to, from)
     $('.advanced-search').classList.remove('search-active')
-    if($('.error-sreach').innerText == '') {
+    if ($('.error-sreach').innerText == '') {
         $$('.header-footer__list-item')[7].click()
     }
 }
 // load trang
-window.onload = function(e) {
+window.onload = function (e) {
     var address = (location.href).split('?')[1]
-    if(address != undefined) {
-        if(address.includes('#')) {
+    if (address != undefined) {
+        if (address.includes('#')) {
             address = address.split('#')[0]
         }
     }
 
-    if(address == '%C3%A1o-kho%C3%A1c') {
+    if (address == '%C3%A1o-kho%C3%A1c') {
         $$('nav-item').forEach(item => {
             item.querySelector('a').classList.remove('class--active')
             console.log(item.querySelector('a'))
         })
         $$('.nav-item')[1].querySelector('a').classList.add('class--active')
-        render(0,undefined,'Áo khoác')
+        render(0, undefined, 'Áo khoác')
         $$('.header-footer__list-item')[7].click()
 
-    } else if(address == '%C3%A1o-len') {
+    } else if (address == '%C3%A1o-len') {
         $$('nav-item').forEach(item => {
             item.querySelector('a').classList.remove('class--active')
         })
         $$('.nav-item')[2].querySelector('a').classList.add('class--active')
-        render(0,undefined,'Áo len')
+        render(0, undefined, 'Áo len')
         $$('.header-footer__list-item')[7].click()
 
-    } else if(address == '%C3%A1o-hoodie') {
+    } else if (address == '%C3%A1o-hoodie') {
         $$('nav-item').forEach(item => {
             item.querySelector('a').classList.remove('class--active')
         })
         $$('.nav-item')[3].querySelector('a').classList.add('class--active')
-        render(0,undefined,'Áo hoodie')
+        render(0, undefined, 'Áo hoodie')
         $$('.header-footer__list-item')[7].click()
 
-    } else if(address == '%C3%A1o-thun-c%C3%A1c-lo%E1%BA%A1i') {
+    } else if (address == '%C3%A1o-thun-c%C3%A1c-lo%E1%BA%A1i') {
         $$('nav-item').forEach(item => {
             item.querySelector('a').classList.remove('class--active')
         })
         $$('.nav-item')[4].querySelector('a').classList.add('class--active')
-        render(0,undefined,'Áo thun các loại')
+        render(0, undefined, 'Áo thun các loại')
         $$('.header-footer__list-item')[7].click()
     } else {
         $$('.nav-item')[0].querySelector('a').classList.add('class--active')
@@ -1380,7 +1440,7 @@ $('.down').onclick = () => {
     sort = false
 }
 
-$('.up').onclick = () => { 
+$('.up').onclick = () => {
     sort = true
 }
 
@@ -1396,11 +1456,11 @@ $('#from').onclick = function () {
     this.select()
 }
 // click nut trang
-function gagina(n,searchItem = undefined,classify = undefined, to = undefined, from = undefined) {
-    render(n,searchItem,classify,to,from)
+function gagina(n, searchItem = undefined, classify = undefined, to = undefined, from = undefined) {
+    render(n, searchItem, classify, to, from)
     const gagi = $$('.pagination__item-btn')
-    for(var i=0; i <gagi.length; i++) {
-        if(i == n) {
+    for (var i = 0; i < gagi.length; i++) {
+        if (i == n) {
             gagi[i].classList.add('btn--active')
         } else {
             gagi[i].classList.remove('btn--active')
@@ -1409,19 +1469,19 @@ function gagina(n,searchItem = undefined,classify = undefined, to = undefined, f
 }
 
 // render nut trang
-function renderGagination(indexHTML,sreachItem = undefined, classify = undefined, to = undefined, from = undefined) {
-    var gaginations =  Math.ceil(indexHTML.length / 4)
+function renderGagination(indexHTML, sreachItem = undefined, classify = undefined, to = undefined, from = undefined) {
+    var gaginations = Math.ceil(indexHTML.length / 4)
     var gagination = ''
-    for(var i=0; i <gaginations; i++) {
-        if(i == 0) {
-            gagination = gagination + 
-            `<li class="pagination__item">
+    for (var i = 0; i < gaginations; i++) {
+        if (i == 0) {
+            gagination = gagination +
+                `<li class="pagination__item">
                 <button onclick="gagina(0,${sreachItem != undefined && `'${sreachItem}'` || undefined}, ${classify != undefined && `'${classify}'` || undefined} ${to != undefined && `,'${to}'` || ''} ${from != undefined && `,'${from}'` || ''})" class="pagination__item-btn btn--active">1</button>
             </li>`
         } else {
-            gagination = gagination + 
-            `<li class="pagination__item">
-                <button onclick="gagina(${i},${sreachItem != undefined && `'${sreachItem}'` || undefined}, ${classify != undefined && `'${classify}'` || undefined} ${to != undefined && `,'${to}'` || ''} ${from != undefined && `,'${from}'` || ''})" class="pagination__item-btn">${i+1}</button>
+            gagination = gagination +
+                `<li class="pagination__item">
+                <button onclick="gagina(${i},${sreachItem != undefined && `'${sreachItem}'` || undefined}, ${classify != undefined && `'${classify}'` || undefined} ${to != undefined && `,'${to}'` || ''} ${from != undefined && `,'${from}'` || ''})" class="pagination__item-btn">${i + 1}</button>
             </li>`
         }
     }
@@ -1431,13 +1491,13 @@ function renderGagination(indexHTML,sreachItem = undefined, classify = undefined
 // render cart
 
 function renderCart() {
-    var html = accountApi[accountActive].cartList.map(cart => 
+    var html = accountApi[accountActive].cartList.map(cart =>
         `<li class="cart-item">
         <div style="background: url(${cart.img}) top / cover no-repeat;" class="cart-img"></div>
         <div class="cart-item__right">
             <p class="item-name">${cart.name}</p>
             <div class="cart-item__right-wrap">
-                <p class="item-price">${cart.price >=1000 ? String(cart.price).slice(0,String(cart.price).length - 3) + '.' + String(cart.price).slice(String(cart.price).length - 3 ,String(cart.price).length) : cart.price}.000₫</p>
+                <p class="item-price">${cart.price >= 1000 ? String(cart.price).slice(0, String(cart.price).length - 3) + '.' + String(cart.price).slice(String(cart.price).length - 3, String(cart.price).length) : cart.price}.000₫</p>
                 <i class="fa-solid fa-minus minus"></i>
                 <input class="quantity" type="text" maxlength="4" value="${cart.quantity}">
                 <i class="fa-solid fa-plus plus"></i>
@@ -1448,12 +1508,12 @@ function renderCart() {
     $('.cart-list').innerHTML = html == '' ? 'Hiện chưa có sản phẩm' : html
 
     $$('.quantity').forEach(item => {
-        item.oninput = function() {
+        item.oninput = function () {
             this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')
         }
     })
     total()
-    if(accountApi[accountActive].cartList.length > 0) {
+    if (accountApi[accountActive].cartList.length > 0) {
         $('.cart-quantity').style.display = 'block'
         $('.cart-quantity-fixed').style.display = 'block'
     } else {
@@ -1464,22 +1524,22 @@ function renderCart() {
     $('.cart-quantity-fixed').innerText = accountApi[accountActive].cartList.length
 
     // xoa cart items
-    $$('.remove').forEach((item,idx) => {
+    $$('.remove').forEach((item, idx) => {
         item.onclick = function () {
-            accountApi[accountActive].cartList.splice(idx,1)
+            accountApi[accountActive].cartList.splice(idx, 1)
             renderCart()
             save()
         }
     })
 
     // tang quantity
-    $$('.plus').forEach((item,idx) => {
+    $$('.plus').forEach((item, idx) => {
         item.onclick = function () {
-            if(Number($$('.quantity')[idx].value) <= 9999) {
+            if (Number($$('.quantity')[idx].value) <= 9999) {
                 var quantity = Number($$('.quantity')[idx].value)
                 quantity += 1
                 $$('.quantity')[idx].value = quantity
-                accountApi[accountActive].cartList[idx].quantity +=1
+                accountApi[accountActive].cartList[idx].quantity += 1
                 save()
                 total()
             }
@@ -1487,12 +1547,12 @@ function renderCart() {
     })
 
     // giảm quantity
-    $$('.minus').forEach((item,idx) => {
+    $$('.minus').forEach((item, idx) => {
         item.onclick = function () {
-            if(Number($$('.quantity')[idx].value) > 1) {
+            if (Number($$('.quantity')[idx].value) > 1) {
                 var quantity = Number($$('.quantity')[idx].value)
                 quantity -= 1
-                accountApi[accountActive].cartList[idx].quantity -=1
+                accountApi[accountActive].cartList[idx].quantity -= 1
                 $$('.quantity')[idx].value = quantity
                 save()
                 total()
@@ -1501,9 +1561,9 @@ function renderCart() {
     })
 
     // set lai quantity
-    $$('.quantity').forEach((item,idx) => {
+    $$('.quantity').forEach((item, idx) => {
         item.onblur = function () {
-            if(this.value <= 0) {
+            if (this.value <= 0) {
                 this.value = 1
                 accountApi[accountActive].cartList[idx].quantity = 1
                 total()
@@ -1518,9 +1578,9 @@ function renderCart() {
 // render details
 function renderDetails(idx) {
     var s = String(idx.price)
-    var PriceS = s.slice(0,s.length - 3) + '.' + s.slice(s.length - 3 ,s.length)
-    $('.showcart').innerHTML = 
-    `<div class="product-card">
+    var PriceS = s.slice(0, s.length - 3) + '.' + s.slice(s.length - 3, s.length)
+    $('.showcart').innerHTML =
+        `<div class="product-card">
                     
     <div class="badge">Hot
     </div>
@@ -1540,7 +1600,7 @@ function renderDetails(idx) {
             <li style="margin: 8px 0;">Sản phẩm đã có mặt ở toàn bộ các cửa hàng trên hệ thống</li>
         </ul>
         <div class="product-bottom-details">
-            <div class="product-price">${idx.price >=1000 ? PriceS : idx.price}.000₫</div>
+            <div class="product-price">${idx.price >= 1000 ? PriceS : idx.price}.000₫</div>
             <i class="fa-solid fa-minus minus_1"></i>
             <input class="quantity_1" type="text" maxlength="4" value="1">
             <i class="fa-solid fa-plus plus_1"></i>
@@ -1556,49 +1616,49 @@ function renderDetails(idx) {
         </div>
     </div>`
 
-    $('.quantity_1').oninput = function (){
+    $('.quantity_1').oninput = function () {
         this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')
     }
 
-    $('.quantity_1').onblur = function (){
-        if(this.value == '' || this.value == 0) {
+    $('.quantity_1').onblur = function () {
+        if (this.value == '' || this.value == 0) {
             this.value = 1
         }
     }
 
-    $('.plus_1').onclick = function (){
+    $('.plus_1').onclick = function () {
         var cong = Number($('.quantity_1').value)
-        cong = cong +1
+        cong = cong + 1
         $('.quantity_1').value = cong
     }
-    
-    $('.minus_1').onclick = function(){
-        if(Number($('.quantity_1').value) > 1){
-        var tru = Number($('.quantity_1').value)
-        tru = tru -1
-        $('.quantity_1').value = tru
+
+    $('.minus_1').onclick = function () {
+        if (Number($('.quantity_1').value) > 1) {
+            var tru = Number($('.quantity_1').value)
+            tru = tru - 1
+            $('.quantity_1').value = tru
         }
     }
-    
-    $('.close_showcart').onclick = function(e) {
+
+    $('.close_showcart').onclick = function (e) {
         $('.showcart-wrap').classList.remove('showcart--active')
     }
 
     $$('.buy1').forEach(item => {
         item.onclick = function (e) {
             var _this = this
-            if(buy) {
+            if (buy) {
                 itemsApi.forEach(item1 => {
-                    if(_this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText == item1.name) {
+                    if (_this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText == item1.name) {
                         var trung = 0
                         accountApi[accountActive].cartList.forEach(item => {
-                            if(item.name == _this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText) {
+                            if (item.name == _this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText) {
                                 trung = 1
                                 item.quantity += Number(_this.parentElement.parentElement.querySelector('.quantity_1').value)
                             }
                         })
 
-                        if(trung == 0) {
+                        if (trung == 0) {
                             accountApi[accountActive].cartList.push({
                                 img: item1.img,
                                 name: item1.name,
@@ -1616,15 +1676,15 @@ function renderDetails(idx) {
                 })
 
                 saleItemsApi.forEach(item1 => {
-                    if(_this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText == item1.name) {
+                    if (_this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText == item1.name) {
                         var trung = 0
                         accountApi[accountActive].cartList.forEach(item => {
-                            if(item.name == _this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText) {
+                            if (item.name == _this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText) {
                                 trung = 1
                                 item.quantity += Number(_this.parentElement.parentElement.querySelector('.quantity_1').value)
                             }
                         })
-                        if(trung == 0) {
+                        if (trung == 0) {
                             accountApi[accountActive].cartList.push({
                                 img: item1.img,
                                 name: item1.name,
@@ -1633,7 +1693,7 @@ function renderDetails(idx) {
                                 approved: false,
                             })
                         }
-                        
+
                         save()
                         renderCart()
                         showSuccessToast()
@@ -1650,17 +1710,17 @@ function renderDetails(idx) {
 
     $$('.cart-add-detail').forEach(item => {
         item.onclick = function (e) {
-            if(buy) {
+            if (buy) {
                 var trung = 0
                 itemsApi.forEach(item => {
-                    if(this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText == item.name) { 
+                    if (this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText == item.name) {
                         accountApi[accountActive].cartList.forEach(item => {
-                            if(item.name == this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText) {
+                            if (item.name == this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText) {
                                 trung = 1
                             }
                         })
 
-                        if(trung == 0) {
+                        if (trung == 0) {
                             accountApi[accountActive].cartList.push({
                                 img: item.img,
                                 name: item.name,
@@ -1677,13 +1737,13 @@ function renderDetails(idx) {
                 })
                 var trung1 = 0
                 saleItemsApi.forEach(item => {
-                    if(this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText == item.name) { 
+                    if (this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText == item.name) {
                         accountApi[accountActive].cartList.forEach(item => {
-                            if(item.name == this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText) {
+                            if (item.name == this.parentElement.parentElement.parentElement.querySelector('.details-name').innerText) {
                                 trung1 = 1
                             }
                         })
-                        if(trung1 == 0) {
+                        if (trung1 == 0) {
                             accountApi[accountActive].cartList.push({
                                 img: item.img,
                                 name: item.name,
@@ -1692,7 +1752,7 @@ function renderDetails(idx) {
                                 approved: false,
                             })
                             renderCart()
-                            showCartToast()    
+                            showCartToast()
                         } else {
                             showCartAgainToast()
                         }
@@ -1707,11 +1767,11 @@ function renderDetails(idx) {
     })
 }
 
-$('.showcart').onclick = function(e) {
+$('.showcart').onclick = function (e) {
     e.stopPropagation()
 }
 
-$('.showcart-wrap').onclick = function() {
+$('.showcart-wrap').onclick = function () {
     $('.showcart-wrap').classList.remove('showcart--active')
 }
 
@@ -1719,19 +1779,19 @@ $('.showcart-wrap').onclick = function() {
 function total() {
     var total = 0
     accountApi[accountActive].cartList.forEach(item => total += item.price * item.quantity)
-    if(total > 1000) {
+    if (total > 1000) {
         var s = String(total)
-        total = s.slice(0,s.length - 3) + '.' + s.slice(s.length - 3 ,s.length)
+        total = s.slice(0, s.length - 3) + '.' + s.slice(s.length - 3, s.length)
     }
     $('.cart-footer__price').innerText = total + '.000₫'
-    if(total == 0) {
+    if (total == 0) {
         $('.cart-footer__price').innerText = '0₫'
     }
 }
 
 // thanh toan
-$('.pay').onclick = function() {
-    if(accountApi[accountActive].cartList.length != 0) {
+$('.pay').onclick = function () {
+    if (accountApi[accountActive].cartList.length != 0) {
         $('.modal-pay').classList.add('modal-pay--active')
         $('#user-name').value = accountApi[accountActive].realName
         $('#sdt').value = accountApi[accountActive].phone
@@ -1739,19 +1799,19 @@ $('.pay').onclick = function() {
     }
 }
 
-$('.modal-pay').onclick = function() {
+$('.modal-pay').onclick = function () {
     this.classList.remove('modal-pay--active')
 }
 
-$('.container-order').onclick = function(e) {
+$('.container-order').onclick = function (e) {
     e.stopPropagation()
 }
 
-$('.order-close').onclick = function() {
+$('.order-close').onclick = function () {
     $('.modal-pay').classList.remove('modal-pay--active')
 }
 
-$('#user-name').onclick = function() {
+$('#user-name').onclick = function () {
     this.select()
 }
 
@@ -1762,9 +1822,9 @@ function renderOrderUser() {
         <div class="cart-item__right">
             <p class="item-name">${order.name}</p>
             <div class="cart-item__right-wrap">
-                <p class="item-price">${order.price >=1000 ? 
-                    String(order.price).slice(0,String(order.price).length - 3) + '.' + String(order.price).slice(String(order.price).length - 3 ,String(order.price).length) : 
-                    order.price}.000₫</p>
+                <p class="item-price">${order.price >= 1000 ?
+            String(order.price).slice(0, String(order.price).length - 3) + '.' + String(order.price).slice(String(order.price).length - 3, String(order.price).length) :
+            order.price}.000₫</p>
                 <div class="order-wrap">
                     <p class="order-content">Số lượng:</p>
                     <input readonly class="quantity" type="text" maxlength="4" value="${order.quantity}" style="border: 0; font-size: 2rem;">
@@ -1781,34 +1841,34 @@ function renderOrderUser() {
 
 function renderSearchUser(id = undefined) {
     const sreachUser = $('.input-name-user').value
-        
+
     var lists = []
     orderItemAllApi.forEach(order => {
-        if(id == undefined) {
-            if(((order.userName).toLowerCase()).indexOf(sreachUser.toLowerCase()) != -1) {
+        if (id == undefined) {
+            if (((order.userName).toLowerCase()).indexOf(sreachUser.toLowerCase()) != -1) {
                 lists.push(order)
             }
-        } else if(id == 1) {
-            if(((order.userName).toLowerCase()).indexOf(sreachUser.toLowerCase()) != -1) {
-                if(!order.approved) {
+        } else if (id == 1) {
+            if (((order.userName).toLowerCase()).indexOf(sreachUser.toLowerCase()) != -1) {
+                if (!order.approved) {
                     lists.push(order)
                 }
             }
-        } else if(id == 2) {
-            if(((order.userName).toLowerCase()).indexOf(sreachUser.toLowerCase()) != -1) {
-                if(order.approved) {
+        } else if (id == 2) {
+            if (((order.userName).toLowerCase()).indexOf(sreachUser.toLowerCase()) != -1) {
+                if (order.approved) {
                     lists.push(order)
                 }
             }
         }
     })
 
-    var html1 = 
-    `<li style="justify-content: center; padding: 20px 0" class="admin-right-list__item">
+    var html1 =
+        `<li style="justify-content: center; padding: 20px 0" class="admin-right-list__item">
         <input class="input-name-user" placeholder="Nhập tên muốn tìm"/>
         <i onclick="renderSearchUser(${id})" class="input-name-user-icon fa-solid fa-magnifying-glass"></i>
     </li>`
-    
+
     html1 = html1 + lists.map(order => `
         <li onclick="showDetailOrder(${order.idorder})" style="cursor: pointer; padding: 20px 0" class="admin-right-list__item">
             <p class="admin-right-name">${order.userName}</p>
@@ -1823,7 +1883,7 @@ function renderSearchUser(id = undefined) {
 }
 
 function renderOrderItemsAll() {
-    var html1 = 
+    var html1 =
         `<li style="justify-content: center; padding: 20px 0" class="admin-right-list__item">
             <input class="input-name-user" placeholder="Nhập tên muốn tìm"/>
             <i onclick="renderSearchUser()" class="input-name-user-icon fa-solid fa-magnifying-glass"></i>
@@ -1845,16 +1905,16 @@ function renderOrderItemsAll() {
 function renderOrderItemsApproved(t = undefined) {
     var lists = []
     orderItemAllApi.forEach(order => {
-        if(!order.approved && t == undefined) {
+        if (!order.approved && t == undefined) {
             lists.push(order)
         }
 
-        if(order.approved && t == 1) {
+        if (order.approved && t == 1) {
             lists.push(order)
         }
     })
 
-    var html1 = 
+    var html1 =
         `<li style="justify-content: center; padding: 20px 0" class="admin-right-list__item">
         <input class="input-name-user" placeholder="Nhập tên muốn tìm"/>
         <i onclick="renderSearchUser(${t == undefined ? 1 : 2})" class="input-name-user-icon fa-solid fa-magnifying-glass"></i>
@@ -1875,13 +1935,13 @@ function renderOrderItemsApproved(t = undefined) {
 
 function showDetailOrder(id) {
     orderItemAllApi.forEach(order => {
-        if(order.idorder == id) {
+        if (order.idorder == id) {
             var total = 0
             order.order.forEach(orderItem => {
                 total += orderItem.price * orderItem.quantity
             })
-            $('.orders-container').innerHTML = 
-            `<li class="details-list__item">
+            $('.orders-container').innerHTML =
+                `<li class="details-list__item">
                 <div class="details-list__item-wrap">
                     <div class="wrap-header">
                         <button class="wrap-header__btn-back">&times;</button>
@@ -1925,9 +1985,9 @@ function showDetailOrder(id) {
                         
                     <div class="details-list__item-wrap-price details-list__item-wrap-sp">
                         Tổng giá: 
-                        <span>${total >=1000 ? 
-                        String(total).slice(0,String(total).length - 3) + '.' + String(total).slice(String(total).length - 3 ,String(total).length) : 
-                        total}.000₫</span>  
+                        <span>${total >= 1000 ?
+                    String(total).slice(0, String(total).length - 3) + '.' + String(total).slice(String(total).length - 3, String(total).length) :
+                    total}.000₫</span>  
                     </div>
                     <div class="details-list__item-wrap-stasus details-list__item-wrap-sp">
                         trạng thái:
@@ -1941,11 +2001,11 @@ function showDetailOrder(id) {
     })
     $('.orders-list').classList.add('ask--active')
 
-    $('.switch').onclick = function(e) {
+    $('.switch').onclick = function (e) {
         orderItemAllApi.forEach(order => {
-            if(order.idorder == Number(e.target.attributes[0].value)) {
+            if (order.idorder == Number(e.target.attributes[0].value)) {
                 order.order.forEach(orders => {
-                    if(!orders.approved) {
+                    if (!orders.approved) {
                         order.approved = true;
                         saveOrder()
                         renderOrderItemsApproved()
@@ -1953,10 +2013,10 @@ function showDetailOrder(id) {
                         e.target.classList.add('switch--active')
                         e.target.querySelector('.switch-content').innerText = 'đã duyệt'
                     }
-                    accountApi.forEach((account,idx) => {
-                        if(idx >= 1) {
+                    accountApi.forEach((account, idx) => {
+                        if (idx >= 1) {
                             accountApi[account.id].orderList.forEach(orderAcc => {
-                                if(orderAcc.idorder == Number(e.target.attributes[0].value)) {
+                                if (orderAcc.idorder == Number(e.target.attributes[0].value)) {
                                     orderAcc.approved = true;
                                     save()
                                     accountActive = account.id
@@ -1965,29 +2025,29 @@ function showDetailOrder(id) {
                                 }
                             })
                         }
-                    })        
+                    })
                 })
             }
         })
     }
 
-    $('.wrap-header__btn-back').onclick = function() {
+    $('.wrap-header__btn-back').onclick = function () {
         $('.orders-list').classList.remove('ask--active')
     }
 
-    $('.orders-list').onclick = function() {
+    $('.orders-list').onclick = function () {
         $('.orders-list').classList.remove('ask--active')
     }
 
-    $('.orders-container').onclick = function(e) {
+    $('.orders-container').onclick = function (e) {
         e.stopPropagation()
     }
 }
 
-$('.order').onclick = function() {
-    if(this.parentElement.parentElement.querySelector('#sdt').value != '' && (this.parentElement.parentElement.querySelector('#sdt').value).length == 10 &&
-       this.parentElement.parentElement.querySelector('#location').value != '' && 
-       this.parentElement.parentElement.querySelector('#user-name').value != '') {
+$('.order').onclick = function () {
+    if (this.parentElement.parentElement.querySelector('#sdt').value != '' && (this.parentElement.parentElement.querySelector('#sdt').value).length == 10 &&
+        this.parentElement.parentElement.querySelector('#location').value != '' &&
+        this.parentElement.parentElement.querySelector('#user-name').value != '') {
 
         var curDate = new Date()
         var hours = curDate.getHours() <= 9 ? '0' + curDate.getHours() : curDate.getHours()
@@ -2006,7 +2066,7 @@ $('.order').onclick = function() {
         orderItemAllApi[orderItemAllApi.length - 1].day = curDay + '/' + curMonth + '/' + curYear
         orderItemAllApi[orderItemAllApi.length - 1].idorder = orderItemAllApi.length - 1
         orderItemAllApi[orderItemAllApi.length - 1].stasus = false
-        for(var i=0; i < accountApi[accountActive].cartList.length; i++) {
+        for (var i = 0; i < accountApi[accountActive].cartList.length; i++) {
             accountApi[accountActive].cartList[i].idorder = orderItemAllApi.length - 1
             accountApi[accountActive].orderList.push(accountApi[accountActive].cartList[i])
             orderItemAllApi[orderItemAllApi.length - 1].order.id = orderItemAllApi.length - 1 + i
@@ -2073,7 +2133,7 @@ const switchs = $$('.heading-right')
 
 // click dang ki
 registers.forEach(register => {
-    register.onclick = function() {
+    register.onclick = function () {
         forms.forEach(form => {
             form.classList.remove('form--active')
         })
@@ -2083,7 +2143,7 @@ registers.forEach(register => {
 })
 
 logins.forEach(login => {
-    login.onclick = function() {
+    login.onclick = function () {
         forms.forEach(form => {
             form.classList.remove('form--active')
         })
@@ -2093,7 +2153,7 @@ logins.forEach(login => {
 })
 
 backs.forEach(back => {
-    back.onclick = function() {
+    back.onclick = function () {
         modal.classList.remove('modal--active')
         forms.forEach(form => {
             form.classList.remove('form--active')
@@ -2103,7 +2163,7 @@ backs.forEach(back => {
 
 switchs.forEach(switc => {
     switc.onclick = function () {
-        if(this == switchs[0]) {
+        if (this == switchs[0]) {
             forms[0].classList.remove('form--active')
             forms[1].classList.add('form--active')
         } else {
@@ -2114,9 +2174,9 @@ switchs.forEach(switc => {
 })
 
 // toast
-function toast ({
+function toast({
     title = '',
-    message = '' ,
+    message = '',
     type = 'info',
     duration = 3000
 }) {
@@ -2124,15 +2184,15 @@ function toast ({
     if (main) {
         const toast = document.createElement('div')
 
-        const autoRemoveId = setTimeout(function() {
-                main.removeChild(toast);
-            }, duration + 1000);
-        
-        toast.onclick = function(e) {
+        const autoRemoveId = setTimeout(function () {
+            main.removeChild(toast);
+        }, duration + 1000);
+
+        toast.onclick = function (e) {
             if (e.target.closest('.toast__close')) {
                 main.removeChild(toast);
                 clearTimeout(autoRemoveId);
-            } 
+            }
         }
 
         const icons = {
@@ -2147,7 +2207,7 @@ function toast ({
 
         toast.classList.add('toast', `toast--${type}`);
         toast.style.animation = `slideInLeft ease 0.3s, fadeOut linear 1s ${delay}s forwards`;
-        
+
         toast.innerHTML = `
             <div class="toast__icon">
             <img class="toast__icon--img" src="${icon}">
@@ -2156,8 +2216,9 @@ function toast ({
             <p class="toast__msg">${message}</p>
             </div>
         `;
-            main.appendChild(toast);
-}}
+        main.appendChild(toast);
+    }
+}
 
 function showSuccessToast() {
     toast({
@@ -2224,8 +2285,8 @@ function createAccount() {
 }
 
 // su kien cuon chuot 
-document.body.onscroll = function() {
-    if(document.documentElement.scrollTop >=110) {
+document.body.onscroll = function () {
+    if (document.documentElement.scrollTop >= 110) {
         $('.fixed').style = 'display: flex; height: 40px; border-bottom: 1px solid rgba(0, 0, 0, 0.1); opacity: 1;'
     } else {
         $('.fixed').style = 'display: flex; height: 0; border: 0; opacity: 0;'
@@ -2236,23 +2297,23 @@ document.body.onscroll = function() {
 var banner = 0
 
 setInterval(function () {
-    banner -=100.2
-    if(banner == -400.8) {
+    banner -= 100.2
+    if (banner == -400.8) {
         banner = 0;
     }
 
-    for(var i=0; i < 4; i++) {
-        if(i == Math.abs(banner / -100.2)) {
+    for (var i = 0; i < 4; i++) {
+        if (i == Math.abs(banner / -100.2)) {
             $$('.choose-banner')[i].classList.add('btn--active')
         } else {
             $$('.choose-banner')[i].classList.remove('btn--active')
         }
     }
-    
-    $('.list-banner').style.marginLeft = `${banner}vw`
-},5000)
 
-$$('.choose-banner').forEach((choose,idx) => {
+    $('.list-banner').style.marginLeft = `${banner}vw`
+}, 5000)
+
+$$('.choose-banner').forEach((choose, idx) => {
     choose.onclick = function () {
         $$('.choose-banner').forEach(item => {
             item.classList.remove('btn--active')
@@ -2267,23 +2328,23 @@ $$('.choose-banner').forEach((choose,idx) => {
 var animationItem = 0
 setInterval(() => {
     animationItem -= 24.8
-    if(animationItem <= -24.8*5) {
+    if (animationItem <= -24.8 * 5) {
         animationItem = 0
     }
     $$('.container-item-selling__list')[1].style.marginLeft = `${animationItem}vw`
-},8000)
+}, 8000)
 
-$('.btn-left').onclick = function() {
+$('.btn-left').onclick = function () {
     animationItem += 24.8
-    if(animationItem >= 0) {
-        animationItem = -24.8*4
+    if (animationItem >= 0) {
+        animationItem = -24.8 * 4
     }
     $$('.container-item-selling__list')[1].style.marginLeft = `${animationItem}vw`
 }
 
-$('.btn-right').onclick = function() {
+$('.btn-right').onclick = function () {
     animationItem -= 24.8
-    if(animationItem <= -24.8*5) {
+    if (animationItem <= -24.8 * 5) {
         animationItem = 0
     }
     $$('.container-item-selling__list')[1].style.marginLeft = `${animationItem}vw`
@@ -2291,8 +2352,8 @@ $('.btn-right').onclick = function() {
 
 // show password
 
-$('.show-password').onclick = function() {
-    if(this.parentElement.querySelector('.form-control').type == 'password') {
+$('.show-password').onclick = function () {
+    if (this.parentElement.querySelector('.form-control').type == 'password') {
         this.parentElement.querySelector('.form-control').type = 'text'
         $('.show-password').innerHTML = `<i class="fa-solid fa-eye"></i>`
     } else {
@@ -2305,89 +2366,89 @@ $('.show-password').onclick = function() {
 function validator(options) {
     function getParent(element, selector) {
         while (element.parentElement) {
-            if(element.parentElement.matches(selector)) {
+            if (element.parentElement.matches(selector)) {
                 return element.parentElement
             }
             element = element.parentElement
         }
     }
-    
-    var selectorRules = {}
-    
-    function validate(inputElement,rule) {
 
-        var errorElement = getParent(inputElement,options.formGroupSelector).querySelector(options.errorSelector)
+    var selectorRules = {}
+
+    function validate(inputElement, rule) {
+
+        var errorElement = getParent(inputElement, options.formGroupSelector).querySelector(options.errorSelector)
         var errorMessage;
 
         var rules = selectorRules[rule.selector]
 
-        for(var i=0; i <rules.length; i++) {
-            switch(inputElement.type) {
-               case 'radio':
-               case 'checkbox':
-                  errorMessage =rules[i](
-                     formElement.querySelector(rule.selector + ':checked') 
-                  );
-                  break;
-               default:
-                  errorMessage =rules[i](inputElement.value);
+        for (var i = 0; i < rules.length; i++) {
+            switch (inputElement.type) {
+                case 'radio':
+                case 'checkbox':
+                    errorMessage = rules[i](
+                        formElement.querySelector(rule.selector + ':checked')
+                    );
+                    break;
+                default:
+                    errorMessage = rules[i](inputElement.value);
             }
-            if(errorMessage) break;
+            if (errorMessage) break;
         }
 
-        if(errorMessage) {
+        if (errorMessage) {
             errorElement.innerText = errorMessage;
-            getParent(inputElement,options.formGroupSelector).classList.add('invalid')
+            getParent(inputElement, options.formGroupSelector).classList.add('invalid')
         } else {
             errorElement.innerText = ''
-            getParent(inputElement,options.formGroupSelector).classList.remove('invalid')
+            getParent(inputElement, options.formGroupSelector).classList.remove('invalid')
         }
 
         return !errorMessage;
     }
-    
+
     var formElement = $(options.form);
-    if(formElement) {
-        formElement.onsubmit = function(e) {
+    if (formElement) {
+        formElement.onsubmit = function (e) {
             e.preventDefault();
 
             var isFormValid = true;
 
             options.rules.forEach(rule => {
                 var inputElement = formElement.querySelector(rule.selector)
-                var isValid = validate(inputElement,rule)
-                if(!isValid) {
+                var isValid = validate(inputElement, rule)
+                if (!isValid) {
                     isFormValid = false;
                 }
             })
 
-            if(isFormValid) {
-                if(typeof options.onSubmit === 'function') {
+            if (isFormValid) {
+                if (typeof options.onSubmit === 'function') {
                     var enableInputs = formElement.querySelectorAll('[name]:not([disabled])')
-                    var formValues = Array.from(enableInputs).reduce(function(values,input) {
-                        switch(input.type) {
+                    var formValues = Array.from(enableInputs).reduce(function (values, input) {
+                        switch (input.type) {
                             case 'radio':
                                 values[input.name] = formElement.querySelector('input[name="' + input.name + '"]:checked').value;
                                 break
                             case 'checkbox':
-                                if(!input.matches(':checked')) {
+                                if (!input.matches(':checked')) {
                                     values[input.name] = ''
                                     return values
                                 }
-                                if(!Array.isArray(values[input.name])) {
+                                if (!Array.isArray(values[input.name])) {
                                     values[input.name] = [];
                                 }
                                 values[input.name].push(input.value)
                                 break
                             case 'file':
-                                values[input.name] = input.files; 
+                                values[input.name] = input.files;
                                 break;
                             default:
                                 values[input.name] = input.value
                         }
                         return values
-                    },{})
-                    options.onSubmit(formValues,createAccount)
+                    }, {})
+                    options.onSubmit(formValues, createAccount)
                     forms[0].classList.remove('form--active')
                     forms[1].classList.add('form--active')
                 } else {
@@ -2397,8 +2458,8 @@ function validator(options) {
         }
 
         options.rules.forEach(rule => {
-            
-            if(Array.isArray(selectorRules[rule.selector])) {
+
+            if (Array.isArray(selectorRules[rule.selector])) {
                 selectorRules[rule.selector].push(rule.test);
             } else {
                 selectorRules[rule.selector] = [rule.test];
@@ -2408,20 +2469,20 @@ function validator(options) {
 
             Array.from(inputElements).forEach(function (inputElement) {
                 inputElement.onblur = function () {
-                    validate(inputElement,rule)
-                } 
+                    validate(inputElement, rule)
+                }
 
                 inputElement.oninput = function () {
-                    var errorElement = getParent(inputElement,options.formGroupSelector).querySelector(options.errorSelector)
+                    var errorElement = getParent(inputElement, options.formGroupSelector).querySelector(options.errorSelector)
                     errorElement.innerText = ''
-                    getParent(inputElement,options.formGroupSelector).classList.remove('invalid')
+                    getParent(inputElement, options.formGroupSelector).classList.remove('invalid')
                 }
             })
         });
     }
 }
 
-validator.isRequired = function (selector,message) {
+validator.isRequired = function (selector, message) {
     return {
         selector: selector,
         test: function (value) {
@@ -2430,7 +2491,7 @@ validator.isRequired = function (selector,message) {
     }
 }
 
-validator.isEmail = function (selector,message) {
+validator.isEmail = function (selector, message) {
     return {
         selector: selector,
         test: function (value) {
@@ -2440,16 +2501,17 @@ validator.isEmail = function (selector,message) {
     }
 }
 
-validator.minLength = function (selector,min,message) {
+validator.minLength = function (selector, min, message) {
     return {
         selector: selector,
         test: function (value) {
-            return value.length >= min ? undefined : message || `Vui lòng nhập tối thiểu ${min} kí tự`
+            var regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\W)(?=.*\d).{6,}$/;
+            return regex.test(value) ? undefined : message || `Vui lòng nhập tối thiểu 6 kí tự bao gồm chữ thường, chữ hoa, số và kí tự đặc biệt`
         }
     }
 }
 
-validator.isConfirmed = function (selector,getConfirmValue,message) {
+validator.isConfirmed = function (selector, getConfirmValue, message) {
     return {
         selector: selector,
         test: function (value) {
@@ -2458,10 +2520,10 @@ validator.isConfirmed = function (selector,getConfirmValue,message) {
     }
 }
 
-validator.isEmailExist = function (selector,message) {
+validator.isEmailExist = function (selector, message) {
     return {
         selector: selector,
-        test: function(value) {
+        test: function (value) {
             var find = accountApi.some(account => {
                 return account.email == value
             })
@@ -2486,7 +2548,7 @@ function logout() {
     })
     removeHidden()
     accountActive = undefined
-    if(accountActive == undefined) {
+    if (accountActive == undefined) {
         $('.cart-list').innerHTML = 'Hiện chưa có sản phẩm'
     }
     $('.cart-quantity').style.display = 'none'
@@ -2521,15 +2583,15 @@ validator({
         validator.isRequired('#email'),
         validator.isEmail('#email'),
         validator.isEmailExist('#email'),
-        validator.minLength('#password',6),
+        validator.minLength('#password', 6),
         validator.isRequired('#password_confirmation'),
-        validator.isConfirmed('#password_confirmation',function () {
+        validator.isConfirmed('#password_confirmation', function () {
             return document.querySelector('#form-1 #password').value
         }, 'Mật khẩu nhập lại không chính xác')
     ],
     // đẩy lên locastorage
-    onSubmit: function (data,toast) {
-        Object.assign(data,{id: accounts.get().length,blackList: false, admin: false, cartList: [], orderList: [], realName: '', phone: '', location: ''})
+    onSubmit: function (data, toast) {
+        Object.assign(data, { id: accounts.get().length, blackList: false, admin: false, cartList: [], orderList: [], realName: '', phone: '', location: '' })
         accounts.set(data)
         toast()
     }
@@ -2545,16 +2607,16 @@ validator({
         validator.isEmail('#emailLogin'),
         validator.isRequired('#passwordLogin'),
     ],
-    onSubmit: function (data,toast = undefined) {
+    onSubmit: function (data, toast = undefined) {
         var login = false
         accountApi.forEach(account => {
-            if(account.email == data.emailLogin && account.password == data.passwordLogin) {
+            if (account.email == data.emailLogin && account.password == data.passwordLogin) {
                 login = true
-                if(account.id == 0) {
+                if (account.id == 0) {
                     // admin
                     addHidden()
-                    $$('.user')[1].innerHTML = 
-                            `<img style="width: 40px; border-radius: 50%;" src="./img/avata admin.jpg" alt="">
+                    $$('.user')[1].innerHTML =
+                        `<img style="width: 40px; border-radius: 50%;" src="./img/avata admin.jpg" alt="">
                             <p class="user-name">${account.name}</p>
                             <ul class="user-setting">
                                 <li class="user-setting__item infor">Tài khoản của tôi</li>
@@ -2568,7 +2630,7 @@ validator({
                 } else {
                     // user
                     $$('.user').forEach(item => {
-                        item.innerHTML = 
+                        item.innerHTML =
                             `<img style="width: 40px; border-radius: 50%;" src="./img/avata admin.jpg" alt="">
                             <p class="user-name">${account.name}</p>
                             <ul class="user-setting">
@@ -2589,7 +2651,7 @@ validator({
             }
         })
 
-        if(!login) {
+        if (!login) {
             var group = document.querySelectorAll('.form-group')
             group[5].querySelector('.form-message').innerText = 'Email hoặc mật khẩu không đúng'
         }
