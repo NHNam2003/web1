@@ -576,6 +576,55 @@ function searchByName(name) {
     }
     return discountProducts;
   }
+  function processPayment(cartItems) {
+    let index = 0;
+    let totalAmount = 0;
+    while (index < cartItems.length) {
+      let currentItem = cartItems[index];
+      if (currentItem.discounted)
+        totalAmount += currentItem.price * (1 - currentItem.discountPercent);
+      else
+        totalAmount += currentItem.price;
+      index++;
+    }
+    if (totalAmount > 0)
+      return "Thanh toán thành công!";
+    else
+      return "Lỗi!";
+  }
+  
+  
+  function calculateDiscount(totalAmount, customerType) {
+    let discount = 0;
+    if (customerType === 'VIP')
+      if (totalAmount >= 1000)
+        discount = 0.2 * totalAmount;
+      else
+        discount = 0.1 * totalAmount;
+    else if (customerType === 'Regular')
+      if (totalAmount >= 500)
+        discount = 0.1 * totalAmount;
+    return discount;
+  }
+  function checkOrderStatus(orderStatus) {
+    let statusMessage = '';
+    switch (orderStatus) {
+      case 'pending':
+        statusMessage = 'Đơn hàng đang chờ xử lý.';
+        break;
+      case 'shipped':
+        statusMessage = 'Đơn hàng đã được gửi đi.';
+        break;
+      case 'delivered':
+        statusMessage = 'Đơn hàng đã được giao thành công.';
+        break;
+    }
+    if (orderStatus === 'shipped' || orderStatus === 'delivered')
+      statusMessage += ' Đơn hàng đã được thanh toán.';
+    else
+      statusMessage += ' Đơn hàng chưa được thanh toán.';
+    return statusMessage;
+  }
 //-------------------------------------------------------------------------------
 const itemsApi = items.get()
 var accountApi = accounts.get()
